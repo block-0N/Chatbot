@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C++ 离线聊天机器人 — 完全离线 · 支持训练 · 内置技能</title>
+    <meta name="description" content="一个完全离线的 C++ 聊天机器人，支持问答训练、文章抽取、14 个内置技能、完整中文输入输出。">
+    <style>
+        :root {
+            --bg: #0d1117;
+            --bg-2: #161b22;
+            --bg-3: #21262d;
+            --fg: #e6edf3;
+            --fg-2: #8b949e;
+            --accent: #58a6ff;
+            --accent-2: #1f6feb;
+            --green: #3fb950;
+            --border: #30363d;
+            --radius: 12px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 1080px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Hero */
+        .hero {
+            padding: 100px 0 60px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, rgba(88, 166, 255, 0.15) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 16px;
+            background: var(--bg-3);
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            font-size: 13px;
+            color: var(--fg-2);
+            margin-bottom: 24px;
+        }
+
+        .badge .dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: var(--green);
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.4;
+            }
+        }
+
+        h1 {
+            font-size: 56px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #e6edf3 0%, #8b949e 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 20px;
+            color: var(--fg-2);
+            margin-bottom: 40px;
+            max-width: 640px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 28px;
+            border-radius: var(--radius);
+            font-size: 15px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .btn-primary {
+            background: var(--accent-2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(31, 111, 235, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--bg-2);
+            color: var(--fg);
+            border-color: var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-3);
+            border-color: var(--fg-2);
+            transform: translateY(-2px);
+        }
+
+        /* Sections */
+        section {
+            padding: 80px 0;
+        }
+
+        .section-title {
+            font-size: 36px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 16px;
+            letter-spacing: -0.01em;
+        }
+
+        .section-subtitle {
+            text-align: center;
+            color: var(--fg-2);
+            font-size: 16px;
+            margin-bottom: 56px;
+        }
+
+        /* Feature Grid */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .feature {
+            padding: 28px;
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            transition: all 0.2s ease;
+        }
+
+        .feature:hover {
+            border-color: var(--accent);
+            transform: translateY(-4px);
+        }
+
+        .feature-icon {
+            font-size: 28px;
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        .feature h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .feature p {
+            color: var(--fg-2);
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        /* Skills */
+        .skills {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+
+        .skill {
+            padding: 16px 20px;
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .skill:hover {
+            background: var(--bg-3);
+            border-color: var(--accent);
+        }
+
+        .skill-emoji {
+            font-size: 20px;
+        }
+
+        .skill-name {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* Quick Start */
+        .code-block {
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            font-family: "Consolas", "Monaco", monospace;
+            font-size: 14px;
+            color: var(--fg);
+            overflow-x: auto;
+            margin-top: 20px;
+            line-height: 1.8;
+        }
+
+        .code-block .comment {
+            color: var(--fg-2);
+        }
+
+        .code-block .cmd {
+            color: var(--green);
+        }
+
+        .code-block .str {
+            color: var(--accent);
+        }
+
+        .steps {
+            display: grid;
+            gap: 24px;
+            max-width: 720px;
+            margin: 0 auto;
+        }
+
+        .step {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .step-num {
+            flex-shrink: 0;
+            width: 36px;
+            height: 36px;
+            background: var(--accent-2);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 15px;
+        }
+
+        .step-body h4 {
+            font-size: 17px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .step-body p {
+            color: var(--fg-2);
+            font-size: 14px;
+        }
+
+        /* Footer */
+        footer {
+            padding: 48px 0;
+            text-align: center;
+            border-top: 1px solid var(--border);
+            color: var(--fg-2);
+            font-size: 14px;
+        }
+
+        footer a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            h1 {
+                font-size: 38px;
+            }
+
+            .subtitle {
+                font-size: 17px;
+            }
+
+            .section-title {
+                font-size: 28px;
+            }
+
+            .hero {
+                padding: 60px 0 40px;
+            }
+
+            section {
+                padding: 60px 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="hero">
+        <div class="container hero-content">
+            <div class="badge">
+                <span class="dot"></span>
+                v2.0 · Windows · 纯离线
+            </div>
+            <h1>C++ 离线聊天机器人</h1>
+            <p class="subtitle">
+                完全离线运行，无需联网。支持问答训练、文章知识抽取、上下文联想、主动学习，内置 14 个实用技能。
+            </p>
+            <div class="buttons">
+                <a href="https://github.com/block-0N/Chatbot/releases/latest" class="btn btn-primary">
+                    ⬇ 下载安装包
+                </a>
+                <a href="https://github.com/block-0N/Chatbot" class="btn btn-secondary">
+                    📦 查看源码
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <section>
+        <div class="container">
+            <h2 class="section-title">核心功能</h2>
+            <p class="section-subtitle">从问答到推理，从对话到技能，一应俱全</p>
+            <div class="features">
+                <div class="feature">
+                    <span class="feature-icon">💬</span>
+                    <h3>智能问答匹配</h3>
+                    <p>精确匹配、模糊纠错、关键词评分、多关键词组合推理，四层匹配策略层层递进。</p>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">📖</span>
+                    <h3>文章自动抽取</h3>
+                    <p>粘贴一整段文章，自动识别"X是Y""X属于Y"等句式，生成问答对。</p>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">🧠</span>
+                    <h3>上下文联想</h3>
+                    <p>记住最近 3 个话题，支持"它喜欢吃什么"这类代词指代。</p>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">🎓</span>
+                    <h3>主动学习</h3>
+                    <p>未命中时反问"要不要教我"，用户一句话就能教会新知识。</p>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">⚙️</span>
+                    <h3>配置外置</h3>
+                    <p>同义词、停用词、关系词等 10 份配置文件，改完 <code>/reload</code> 生效，无需重编译。</p>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">🇨🇳</span>
+                    <h3>完整中文支持</h3>
+                    <p>基于 Windows API 的宽字符读取，无论控制台代码页如何，中文输入输出都正常。</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section style="background: var(--bg-2);">
+        <div class="container">
+            <h2 class="section-title">内置技能</h2>
+            <p class="section-subtitle">不需要训练，开箱即用</p>
+            <div class="skills">
+                <div class="skill"><span class="skill-emoji">🕐</span><span class="skill-name">时间日期</span></div>
+                <div class="skill"><span class="skill-emoji">🧮</span><span class="skill-name">计算器</span></div>
+                <div class="skill"><span class="skill-emoji">🎲</span><span class="skill-name">掷骰子</span></div>
+                <div class="skill"><span class="skill-emoji">✊</span><span class="skill-name">石头剪刀布</span></div>
+                <div class="skill"><span class="skill-emoji">⏱️</span><span class="skill-name">倒计时</span></div>
+                <div class="skill"><span class="skill-emoji">🎯</span><span class="skill-name">随机数</span></div>
+                <div class="skill"><span class="skill-emoji">🪙</span><span class="skill-name">抛硬币</span></div>
+                <div class="skill"><span class="skill-emoji">🍜</span><span class="skill-name">今天吃什么</span></div>
+                <div class="skill"><span class="skill-emoji">📏</span><span class="skill-name">单位换算</span></div>
+                <div class="skill"><span class="skill-emoji">🔢</span><span class="skill-name">猜数字</span></div>
+                <div class="skill"><span class="skill-emoji">📜</span><span class="skill-name">古诗词</span></div>
+                <div class="skill"><span class="skill-emoji">💭</span><span class="skill-name">名言警句</span></div>
+                <div class="skill"><span class="skill-emoji">🀄</span><span class="skill-name">成语接龙</span></div>
+                <div class="skill"><span class="skill-emoji">📝</span><span class="skill-name">字数统计</span></div>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <div class="container">
+            <h2 class="section-title">快速开始</h2>
+            <p class="section-subtitle">下载即用，无需配置</p>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <div class="step-body">
+                        <h4>下载安装包</h4>
+                        <p>从 <a href="https://github.com/block-0N/Chatbot/releases/latest"
+                                style="color:var(--accent)">Releases</a> 下载 <code>Chatbot_v2.0_Setup.exe</code>，双击安装。
+                        </p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <div class="step-body">
+                        <h4>启动程序</h4>
+                        <p>从开始菜单或桌面快捷方式启动，无需联网，无需安装任何依赖。</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <div class="step-body">
+                        <h4>开始对话</h4>
+                        <p>选择模式 3 进入对话，或选模式 1 训练新知识。</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="code-block">
+                <span class="comment"># 主菜单</span>
+                1. 对话训练 <span class="str">格式：问题|回答</span>
+                2. 文章训练 <span class="str">粘贴文章自动抽取</span>
+                3. 对话模式 <span class="str">和机器人聊天</span>
+                4. 退出
+                5. 词库管理
+
+                <span class="comment"># 对话内命令</span>
+                <span class="cmd">/debug</span> 开关调试输出
+                <span class="cmd">/reload</span> 重载配置
+                <span class="cmd">/forget</span> 删除知识
+                <span class="cmd">/import</span> 批量导入
+                <span class="cmd">/export</span> 导出知识库
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>
+                <a href="https://github.com/block-0N/Chatbot">GitHub</a> ·
+                <a href="https://github.com/block-0N/Chatbot/releases">Releases</a> ·
+                MIT License
+            </p>
+            <p style="margin-top: 8px;">Made with C++ · Windows · 完全离线</p>
+        </div>
+    </footer>
+
+</body>
+
+</html>
