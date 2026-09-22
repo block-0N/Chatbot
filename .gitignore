@@ -1,0 +1,22 @@
+# 编译产物
+*.exe
+*.res
+*.o
+*.obj
+
+# 运行时临时文件
+*.tmp
+
+# 备份文件
+*_v*.dat
+*_backup/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Release / 安装包产物
+release/
+installer/Output/
+*.zip
