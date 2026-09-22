@@ -17,7 +17,14 @@
 - [常见问题](#常见问题)
 
 ## 快速开始
+### 下载
 
+- [安装包](https://github.com/block-0N/Chatbot/releases/latest) — 推荐
+- [免安装版](https://github.com/block-0N/Chatbot/releases/latest) — 解压即用
+
+### 项目主页
+
+https://github.com/block-0N/Chatbot
 ### 环境要求
 
 - Windows 系统
