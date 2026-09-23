@@ -30,6 +30,7 @@
 #include <vector>
 
 #include "config.h"
+#include "console_ui.h"
 // ============================================================
 // 1. 通用字符串工具
 // ============================================================
@@ -2105,6 +2106,8 @@ class ChatBot {
             if (qlen == 0) break;
             std::string question(qlen, '\0');
             if (!f.read(&question[0], (std::streamsize)qlen)) break;
+            // 兼容 LF 和 CRLF
+            if (f.peek() == '\r') f.ignore(1);
             f.ignore(1);
             if (!std::getline(f, line)) break;
             int count = 0;
@@ -2141,6 +2144,7 @@ class ChatBot {
                     ok = false;
                     break;
                 }
+                if (f.peek() == '\r') f.ignore(1);
                 f.ignore(1);
                 answers.push_back(std::move(a));
             }
@@ -2170,39 +2174,85 @@ class ChatBot {
 // 8. 交互界面
 // ============================================================
 void printMenu() {
-    system("cls");
-    std::cout << "\n========================================\n";
-    std::cout << "   欢迎使用 C++ 离线 AI 聊天机器人\n";
-    std::cout << "========================================\n";
-    std::cout << "请选择模式：\n";
-    std::cout << "1. 对话训练模式 (输入: 1 或 train)\n";
-    std::cout << "   格式: 问题|回答\n";
-    std::cout << "2. 文章训练模式 (输入: 2 或 article)\n";
-    std::cout << "3. 对话模式     (输入: 3 或 chat)\n";
-    std::cout << "4. 退出         (输入: 4 或 exit)\n";
-    std::cout << "5. 词库管理     (输入: 5 或 dict)\n";
-    std::cout << "========================================\n";
-    std::cout << "模式内: /back /exit /save /stats /debug /reload\n";
-    std::cout << "额外:   /forget <问题>  /import <文件>  /export <文件>\n";
+    UI::clearScreen();
+    UI::printTitle("C++ 离线 AI 聊天机器人", 44);
+    std::cout << "\n";
+
+    UI::setColor(UI::BRIGHT_GREEN);
+    std::cout << "   1. ";
+    UI::resetColor();
+    std::cout << "对话训练  ";
+    UI::setColor(UI::GRAY);
+    std::cout << "(格式: 问题|回答)\n";
+    UI::resetColor();
+
+    UI::setColor(UI::BRIGHT_GREEN);
+    std::cout << "   2. ";
+    UI::resetColor();
+    std::cout << "文章训练  ";
+    UI::setColor(UI::GRAY);
+    std::cout << "(粘贴文章自动抽取)\n";
+    UI::resetColor();
+
+    UI::setColor(UI::BRIGHT_GREEN);
+    std::cout << "   3. ";
+    UI::resetColor();
+    std::cout << "对话模式  ";
+    UI::setColor(UI::GRAY);
+    std::cout << "(和机器人聊天)\n";
+    UI::resetColor();
+
+    UI::setColor(UI::BRIGHT_GREEN);
+    std::cout << "   4. ";
+    UI::resetColor();
+    std::cout << "词库管理  ";
+    UI::setColor(UI::GRAY);
+    std::cout << "(编辑词典)\n";
+    UI::resetColor();
+
+    UI::setColor(UI::BRIGHT_RED);
+    std::cout << "   5. 退出\n";
+    UI::resetColor();
+
+    std::cout << "\n";
+    UI::printDivider(44);
+    UI::setColor(UI::GRAY);
+    std::cout << "   命令: /back /exit /save /stats /debug /reload\n";
+    std::cout << "   知识: /forget /import /export\n";
+    UI::resetColor();
+    std::cout << "\n";
+    UI::setColor(UI::BRIGHT_YELLOW);
+    std::cout << "   > 请输入模式选择: ";
+    UI::resetColor();
 }
 
 int main() {
-    SetConsoleOutputCP(CP_UTF8);
-    SetConsoleTitleW(L"C++ 离线 AI 聊天机器人");
-    setConsoleFont(L"Consolas", 20);
+    UI::init(L"C++ 离线 AI 聊天机器人");
 
     ChatBot bot;
     bot.init("config");
     bot.registerSkills();
-    system("cls");
-    std::cout << "[系统] 词典: "
-              << (bot.segmenter_.loadDict("dict.dat") ? "已加载" : "未找到")
-              << "\n";
-    std::cout << "[系统] 知识库: " << (bot.load("data.dat") ? "已加载" : "空")
-              << "\n";
-    std::cout << "[系统] 配置: config/ 已就绪\n";
-    std::cout << "[状态] 问题: " << bot.kb_.size()
-              << "，关键词: " << bot.invertedIndex_.size() << "\n";
+
+    UI::clearScreen();
+    UI::printBanner();
+
+    UI::showLoading("加载词典", 400);
+    bool dictOk = bot.segmenter_.loadDict("dict.dat");
+    if (!dictOk) UI::warn("未找到 dict.dat，分词将退化为单字");
+
+    UI::showLoading("加载知识库", 400);
+    bool dataOk = bot.load("data.dat");
+    if (!dataOk) UI::info("未找到 data.dat，使用空知识库");
+
+    UI::showLoading("加载配置", 400);
+
+    std::cout << "\n";
+    UI::printDivider(44);
+    UI::setColor(UI::BRIGHT_GREEN);
+    std::cout << "   知识库: " << bot.kb_.size() << " 个问题\n";
+    std::cout << "   关键词: " << bot.invertedIndex_.size() << " 个\n";
+    UI::resetColor();
+    UI::printDivider(44);
 
     std::cout << "\n按回车进入主菜单...";
     std::cout.flush();
@@ -2214,8 +2264,8 @@ int main() {
             printMenu();
             std::cout << "> 请输入模式选择: ";
             std::string line = UTF8Utils::readLineSafe();
-            if (line.empty() && std::cin.eof()) break;
             std::string s = StringUtils::toLowerAscii(StringUtils::trim(line));
+            if (s.empty()) continue; // 空行直接重新提示，不打印错误
             if (s == "1" || s == "train") {
                 mode = "train";
             } else if (s == "2" || s == "article") {
@@ -2277,7 +2327,10 @@ int main() {
             if (!tm.empty()) std::cout << "AI: " << tm << "\n";
         }
 
+        UI::setColor(UI::BRIGHT_YELLOW);
         std::cout << "> ";
+        UI::resetColor();
+        std::cout.flush();
         std::string raw = UTF8Utils::readLineSafe();
         if (raw.empty() && std::cin.eof()) break;
         std::string trimmed = StringUtils::trim(raw);
@@ -2376,7 +2429,7 @@ int main() {
         } else if (mode == "chat") {
             if (trimmed.empty()) continue;
             ChatResult r = bot.chat(trimmed);
-            std::cout << "AI: " << r.reply << "\n";
+            UI::printAI(r.reply);
         } else if (mode == "article") {
             std::string article;
             bool userBack = false;

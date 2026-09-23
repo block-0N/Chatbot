@@ -15,6 +15,7 @@
 #include <conio.h>
 #include <cstdio>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <limits>
 #include <map>
@@ -26,6 +27,7 @@
 #include <vector>
 
 #include "config.h"
+#include "console_ui.h"
 // ================= 字符串工具 =================
 
 namespace StringUtils {
@@ -153,7 +155,10 @@ static const int KEY_ESC = 27;
 static const int KEY_ENTER = 13;
 
 inline void waitAnyKey(const char *prompt = "按任意键返回主菜单...") {
-    std::cout << "\n" << prompt;
+    std::cout << "\n";
+    UI::setColor(UI::GRAY);
+    std::cout << prompt;
+    UI::resetColor();
     std::cout.flush();
     _getch();
 }
@@ -400,29 +405,77 @@ static void pagedView(const std::string &title,
 // ================= 菜单 =================
 
 static void showMenu() {
-    console::clearScreen();
-    std::cout << "\n=== 汉语常用词库管理系统 ===\n\n";
-    std::cout << "【词库】\n";
-    std::cout << "  1. 录入新词语\n";
-    std::cout << "  2. 查看现有词库\n";
-    std::cout << "  3. 搜索词语\n";
-    std::cout << "  4. 删除词语\n";
-    std::cout << "  5. 统计词库信息\n";
-    std::cout << "  6. 分词\n\n";
-    std::cout << "【配置】\n";
-    std::cout << "  7. 编辑同义词\n";
-    std::cout << "  8. 编辑停用词\n";
-    std::cout << "  9. 编辑关系词\n";
-    std::cout << " 10. 编辑代词\n";
-    std::cout << " 11. 编辑时间词\n";
-    std::cout << " 12. 编辑连接词 / 量词\n";
-    std::cout << " 13. 编辑兜底回复\n";
-    std::cout << " 14. 编辑聊天角色 / 动词黑名单\n\n";
-    std::cout << "【维护】\n";
-    std::cout << " 15. 重建所有配置文件（覆盖）\n";
-    std::cout << " 16. 清空词库\n\n";
-    std::cout << "  0. 退出程序\n\n";
-    std::cout << "请选择操作: ";
+    UI::clearScreen();
+    UI::printTitle("汉语常用词库管理系统", 44);
+    std::cout << "\n";
+
+    UI::setColor(UI::BRIGHT_CYAN);
+    std::cout << "  【词库】\n";
+    UI::resetColor();
+    UI::setColor(UI::BRIGHT_GREEN);
+    std::cout << "   1. ";
+    UI::resetColor();
+    std::cout << "录入新词语\n";
+    std::cout << "   2. ";
+    UI::resetColor();
+    std::cout << "查看现有词库\n";
+    std::cout << "   3. ";
+    UI::resetColor();
+    std::cout << "搜索词语\n";
+    std::cout << "   4. ";
+    UI::resetColor();
+    std::cout << "删除词语\n";
+    std::cout << "   5. ";
+    UI::resetColor();
+    std::cout << "统计词库信息\n";
+    std::cout << "   6. ";
+    UI::resetColor();
+    std::cout << "分词\n\n";
+
+    UI::setColor(UI::BRIGHT_CYAN);
+    std::cout << "  【配置】\n";
+    UI::resetColor();
+    for (int i = 7; i <= 14; i++) {
+        UI::setColor(UI::BRIGHT_GREEN);
+        if (i < 10)
+            std::cout << "   " << i << ". ";
+        else
+            std::cout << "  " << i << ". ";
+        UI::resetColor();
+        const char *names[] = {"",
+                               "",
+                               "",
+                               "",
+                               "",
+                               "",
+                               "",
+                               "编辑同义词",
+                               "编辑停用词",
+                               "编辑关系词",
+                               "编辑代词",
+                               "编辑时间词",
+                               "编辑连接词/量词",
+                               "编辑兜底回复",
+                               "编辑聊天角色/动词黑名单"};
+        std::cout << names[i] << "\n";
+    }
+    std::cout << "\n";
+
+    UI::setColor(UI::BRIGHT_CYAN);
+    std::cout << "  【维护】\n";
+    UI::resetColor();
+    std::cout << "   15. 重建所有配置文件\n";
+    std::cout << "   16. 清空词库\n\n";
+
+    UI::setColor(UI::BRIGHT_RED);
+    std::cout << "   0. 退出程序\n";
+    UI::resetColor();
+
+    std::cout << "\n";
+    UI::printDivider(44);
+    UI::setColor(UI::BRIGHT_YELLOW);
+    std::cout << "   请选择操作: ";
+    UI::resetColor();
     std::cout.flush();
 }
 
@@ -608,7 +661,9 @@ static void segmentText(const Dictionary &dict) {
     std::cout << "输入一行文本进行分词；直接回车返回主菜单。\n\n";
 
     while (true) {
+        UI::setColor(UI::BRIGHT_YELLOW);
         std::cout << "> ";
+        UI::resetColor();
         std::cout.flush();
 
         std::string line = UTF8Utils::readLineSafe();
@@ -947,11 +1002,11 @@ static void rebuildConfigs() {
 }
 // ================= 入口（老 MinGW：main + SetConsoleTitleW） =================
 int main() {
-    SetConsoleOutputCP(CP_UTF8);
-    SetConsoleTitleW(L"汉语常用词库管理系统");
-    setConsoleFont(L"Consolas", 20);
+    UI::init(L"汉语常用词库管理系统");
 
-    // 确保 dict.dat 存在
+    UI::clearScreen();
+    UI::printBanner();
+
     {
         std::ifstream check("dict.dat");
         if (!check.good()) {
@@ -960,16 +1015,23 @@ int main() {
         }
     }
 
+    UI::showLoading("加载词库", 400);
     Dictionary dict("dict.dat");
     if (!dict.load()) {
-        std::cerr << "无法加载 dict.dat\n";
+        UI::error("无法加载 dict.dat");
+        std::this_thread::sleep_for(std::chrono::seconds(2));
         return 1;
     }
 
-    // 加载配置
+    UI::showLoading("加载配置", 400);
     Config config;
     config.ensureFilesExist("config");
     config.loadFromDir("config");
+
+    UI::success("词库: " + std::to_string(dict.size()) + " 词");
+    std::cout << "\n按回车进入主菜单...";
+    std::cout.flush();
+    UTF8Utils::readLineSafe();
 
     while (true) {
         showMenu();
