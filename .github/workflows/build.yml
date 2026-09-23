@@ -1,0 +1,84 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install MinGW and Inno Setup
+        shell: pwsh
+        run: |
+          choco install mingw --no-progress -y
+          choco install innosetup --no-progress -y
+
+      - name: Refresh PATH
+        shell: pwsh
+        run: |
+          $machinePath = [Environment]::GetEnvironmentVariable("Path", "Machine")
+          $userPath    = [Environment]::GetEnvironmentVariable("Path", "User")
+          "$machinePath;$userPath" | Out-File -Append -Encoding utf8 $env:GITHUB_PATH
+
+      - name: Verify tools
+        run: |
+          g++ --version
+          windres --version
+
+      - name: Update version in setup.iss
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        run: |
+          $ver = "${{ github.ref_name }}" -replace '^v',''
+          $content = Get-Content installer/setup.iss -Raw
+          $content = $content -replace '#define MyAppVersion ".*"', "#define MyAppVersion `"$ver`""
+          $content = $content -replace 'OutputBaseFilename=.*', "OutputBaseFilename=Chatbot_$ver`_Setup"
+          Set-Content installer/setup.iss -Value $content -NoNewline
+
+      - name: Build resource
+        run: windres app.rc -O coff -o app.res
+
+      - name: Create release dir
+        shell: pwsh
+        run: New-Item -ItemType Directory -Force release | Out-Null
+
+      - name: Compile executables
+        shell: pwsh
+        run: |
+          g++ -std=c++17 -O2 -finput-charset=UTF-8 -fexec-charset=UTF-8 -I src src/functions.cpp app.res -o release/functions.exe
+          g++ -std=c++17 -O2 -finput-charset=UTF-8 -fexec-charset=UTF-8 -I src src/dict.cpp app.res -o release/dict.exe
+
+      - name: Copy data files
+        shell: pwsh
+        run: |
+          Copy-Item data/dict.dat release/ -Force
+          Copy-Item data/data.dat release/ -Force
+          Copy-Item data/config release/ -Recurse -Force
+          Copy-Item README.md release/ -Force
+
+      - name: Build installer
+        run: '& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer/setup.iss'
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Chatbot
+          path: |
+            release/
+            installer/Output/*.exe
+
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: installer/Output/*.exe
+          generate_release_notes: true
