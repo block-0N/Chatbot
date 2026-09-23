@@ -1,5 +1,5 @@
 ; ============================================================
-;  Chatbot v2.0 Inno Setup 安装脚本
+;  Chatbot v2.1 Inno Setup 安装脚本
 ;  用 Inno Setup Compiler 打开本文件 → Build → Compile
 ; ============================================================
 
@@ -16,7 +16,7 @@ AppPublisher={#MyAppPublisher}
 DefaultDirName={autopf}\Chatbot
 DefaultGroupName={#MyAppName}
 OutputDir=Output
-OutputBaseFilename=Chatbot_v2.0_Setup
+OutputBaseFilename=Chatbot_v2.1_Setup
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern

@@ -4,7 +4,7 @@ setlocal enabledelayedexpansion
 cd /d "%~dp0"
 
 echo ========================================
-echo  编译 Chatbot v2.0
+echo  编译 Chatbot v2.1
 echo ========================================
 echo.
 
