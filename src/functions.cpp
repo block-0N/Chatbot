@@ -2272,11 +2272,11 @@ int main() {
                 mode = "article";
             } else if (s == "3" || s == "chat") {
                 mode = "chat";
-            } else if (s == "4" || s == "exit") {
+            } else if (s == "5" || s == "exit") {
                 bot.save("data.dat");
                 std::cout << "再见！\n";
                 break;
-            } else if (s == "5" || s == "dict") {
+            } else if (s == "4" || s == "dict") {
                 std::cout << "[系统] 正在启动词库管理工具...\n";
                 if (GetFileAttributesA("dict.exe") == INVALID_FILE_ATTRIBUTES) {
                     std::cout << "[错误] 找不到 dict.exe，"
