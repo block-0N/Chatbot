@@ -72,7 +72,7 @@ if exist "app.rc" (
 
 REM ---- 编译 ----
 echo [1/3] 编译 functions.exe ...
-"!GXX!" -std=c++17 -O2 -finput-charset=UTF-8 -fexec-charset=UTF-8 -I src src\functions.cpp !RES_ARG! -o release\functions.exe
+"!GXX!" -std=c++17 -O2 -static -static-libgcc -static-libstdc++ -finput-charset=UTF-8 -fexec-charset=UTF-8 -I src src\functions.cpp !RES_ARG! -o release\functions.exe
 if errorlevel 1 (
     echo [错误] 失败。
     pause
@@ -82,7 +82,7 @@ echo      完成。
 echo.
 
 echo [2/3] 编译 dict.exe ...
-"!GXX!" -std=c++17 -O2 -finput-charset=UTF-8 -fexec-charset=UTF-8 -I src src\dict.cpp !RES_ARG! -o release\dict.exe
+"!GXX!" -std=c++17 -O2 -static -static-libgcc -static-libstdc++ -finput-charset=UTF-8 -fexec-charset=UTF-8 -I src src\dict.cpp !RES_ARG! -o release\dict.exe
 if errorlevel 1 (
     echo [错误] 失败。
     pause

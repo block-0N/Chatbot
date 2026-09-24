@@ -54,8 +54,8 @@ jobs:
       - name: Compile executables
         shell: pwsh
         run: |
-          g++ -std=c++17 -O2 -finput-charset=UTF-8 -fexec-charset=UTF-8 -I src src/functions.cpp app.res -o release/functions.exe
-          g++ -std=c++17 -O2 -finput-charset=UTF-8 -fexec-charset=UTF-8 -I src src/dict.cpp app.res -o release/dict.exe
+          g++ -std=c++17 -O2 -static -static-libgcc -static-libstdc++ -finput-charset=UTF-8 -fexec-charset=UTF-8 -I src src/functions.cpp app.res -o release/functions.exe
+          g++ -std=c++17 -O2 -static -static-libgcc -static-libstdc++ -finput-charset=UTF-8 -fexec-charset=UTF-8 -I src src/dict.cpp app.res -o release/dict.exe
 
       - name: Copy data files
         shell: pwsh
